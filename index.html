@@ -14,7 +14,6 @@
 </head>
 <body>
   <div id="controls">
-    <button id="cacheAll">Cache All</button>
     <button id="cacheSeq">Cache Sequentially</button>
     <span id="status"></span>
   </div>
@@ -58,14 +57,6 @@
     };
     img.src = '/birdie.jpg';
 
-    document.getElementById('cacheAll').addEventListener('click', () => {
-      status.textContent = 'Caching all...';
-      requestAnimationFrame(() => {
-        layer.getChildren().forEach(node => node.cache());
-        status.textContent = `Cached all ${layer.getChildren().length} pieces.`;
-      });
-    });
-
     document.getElementById('cacheSeq').addEventListener('click', () => {
       const children = layer.getChildren().slice();
       let i = 0;
@@ -79,7 +70,7 @@
         children[i].cache();
         i++;
         status.textContent = `Caching sequentially: ${i}/${children.length}`;
-        requestAnimationFrame(next);
+        setTimeout(next, 50);
       }
       requestAnimationFrame(next);
     });
