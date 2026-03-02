@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konva Cache Crash Repro</title>
+  <script src="https://unpkg.com/konva@10/konva.min.js"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    #controls { padding: 12px; display: flex; gap: 8px; align-items: center; }
+    button { padding: 8px 16px; cursor: pointer; font-size: 14px; }
+    #status { margin-left: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button id="cacheAll">Cache All</button>
+    <button id="cacheSeq">Cache Sequentially</button>
+    <span id="status"></span>
+  </div>
+  <div id="container"></div>
+
+  <script>
+    const PIECE_PATH = 'M 0,0 C 189,-11 487,65 368,-124 C 250,-313 627,-313 557,-124 C 487,65 755,23 944,0 L 944,943 L 0,943 C 5,755 98,508 -91,587 C -279,667 -279,290 -91,399 C 98,508 34,189 0,0';
+    const COLS = 10;
+    const ROWS = 10;
+    const PIECE_W = 944;
+    const PIECE_H = 943;
+    const SCALE = 0.08;
+
+    const status = document.getElementById('status');
+    const stage = new Konva.Stage({
+      container: 'container',
+      width: window.innerWidth,
+      height: window.innerHeight - 50,
+    });
+    const layer = new Konva.Layer();
+    stage.add(layer);
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          const path = new Konva.Path({
+            data: PIECE_PATH,
+            x: col * PIECE_W * SCALE + 20,
+            y: row * PIECE_H * SCALE + 20,
+            scaleX: SCALE,
+            scaleY: SCALE,
+            fillPatternImage: img,
+            fillPatternOffset: { x: col * PIECE_W, y: row * PIECE_H },
+          });
+          layer.add(path);
+        }
+      }
+      status.textContent = `${COLS * ROWS} pieces rendered.`;
+    };
+    img.src = '/birdie.jpg';
+
+    document.getElementById('cacheAll').addEventListener('click', () => {
+      status.textContent = 'Caching all...';
+      requestAnimationFrame(() => {
+        layer.getChildren().forEach(node => node.cache());
+        status.textContent = `Cached all ${layer.getChildren().length} pieces.`;
+      });
+    });
+
+    document.getElementById('cacheSeq').addEventListener('click', () => {
+      const children = layer.getChildren().slice();
+      let i = 0;
+      status.textContent = `Caching sequentially: 0/${children.length}`;
+
+      function next() {
+        if (i >= children.length) {
+          status.textContent = `Cached all ${children.length} pieces sequentially.`;
+          return;
+        }
+        children[i].cache();
+        i++;
+        status.textContent = `Caching sequentially: ${i}/${children.length}`;
+        requestAnimationFrame(next);
+      }
+      requestAnimationFrame(next);
+    });
+  </script>
+</body>
+</html>
